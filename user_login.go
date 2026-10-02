@@ -1,6 +1,14 @@
 package main
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/google/uuid"
+
+	"github.com/jason-M5/gator/internal/database"
+)
 
 func handlerLogin(s *state, cmd command) error {
 	if len(cmd.arguments) == 0 {
@@ -8,8 +16,33 @@ func handlerLogin(s *state, cmd command) error {
 	}
 	err := s.config.SetUser(cmd.arguments[0])
 	if err != nil {
-		return fmt.Errorf("could not set user: %v", err)
+		return fmt.Errorf("could not set user: %v\n", err)
 	}
 	fmt.Println("User has been set")
 	return nil
+}
+
+func handlerRegister(s *state, cmd command) error {
+
+	if len(cmd.arguments) == 0 {
+		return fmt.Errorf("expects one argument, the username")
+	}
+
+	name := cmd.arguments[0]
+
+	user, err := s.db.CreateUser(context.Background(), database.CreateUserParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Name:      name,
+	})
+	if err != nil {
+		return fmt.Errorf("unable to create user in database: %v\n", err)
+	}
+
+	fmt.Printf("User '%s' was successfully created!\n", name)
+	fmt.Printf("Logged Data: %+v\n", user)
+
+	return nil
+
 }
