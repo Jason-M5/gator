@@ -37,6 +37,9 @@ func main() {
 		cmds: make(map[string]func(*state, command) error),
 	}
 	cmds.register("login", handlerLogin)
+	cmds.register("reset", handlerReset)
+	cmds.register("register", handlerRegister)
+	cmds.register("users", handlerGetUsers)
 
 	if len(os.Args) < 2 {
 		log.Fatalf("not enough arguments")
