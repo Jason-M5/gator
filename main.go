@@ -7,48 +7,48 @@ import (
 
 	"github.com/jason-M5/gator/internal/config"
 	"github.com/jason-M5/gator/internal/database"
-
 	_ "github.com/lib/pq"
 )
 
 type state struct {
-	db     *database.Queries
-	config *config.Config
+	db  *database.Queries
+	cfg *config.Config
 }
 
 func main() {
-
 	cfg, err := config.Read()
 	if err != nil {
 		log.Fatalf("error reading config: %v", err)
 	}
+
 	db, err := sql.Open("postgres", cfg.DBURL)
 	if err != nil {
-		log.Fatalf("unable to open db: %v", err)
+		log.Fatalf("error connecting to db: %v", err)
 	}
-
+	defer db.Close()
 	dbQueries := database.New(db)
 
-	progState := &state{
-		db:     dbQueries,
-		config: &cfg,
+	programState := &state{
+		db:  dbQueries,
+		cfg: &cfg,
 	}
+
 	cmds := commands{
-		cmds: make(map[string]func(*state, command) error),
+		registeredCommands: make(map[string]func(*state, command) error),
 	}
 	cmds.register("login", handlerLogin)
-	cmds.register("reset", handlerReset)
 	cmds.register("register", handlerRegister)
-	cmds.register("users", handlerGetUsers)
+	cmds.register("reset", handlerReset)
+	cmds.register("users", handlerListUsers)
 
 	if len(os.Args) < 2 {
-		log.Fatalf("not enough arguments")
+		log.Fatal("Usage: cli <command> [args...]")
 	}
-	cmd := command{
-		name:      os.Args[1],
-		arguments: os.Args[2:],
-	}
-	err = cmds.run(progState, cmd)
+
+	cmdName := os.Args[1]
+	cmdArgs := os.Args[2:]
+
+	err = cmds.run(programState, command{Name: cmdName, Args: cmdArgs})
 	if err != nil {
 		log.Fatal(err)
 	}
